@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#04060f" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="description" content="电学大冒险 - 人教版物理电学互动学习游戏，覆盖初中高中20个关卡，含知识讲解、互动实验、闯关测试、错题本与模拟考试，湖南考试必备。" />
+<meta name="keywords" content="电学,物理,人教版,初中物理,高中物理,学习游戏,电学实验,欧姆定律,电磁感应,湖南中考" />
+<meta name="author" content="电学大冒险" />
+<meta property="og:title" content="电学大冒险 · 人教版物理" />
+<meta property="og:description" content="零基础学电学 · 从电荷到电磁感应 · 湖南考试必备" />
+<meta property="og:type" content="website" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+<title>电学大冒险 · 人教版物理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<!-- 背景特效层 -->
+<div class="aurora">
+  <div class="aurora-blob b1"></div>
+  <div class="aurora-blob b2"></div>
+  <div class="aurora-blob b3"></div>
+  <div class="aurora-blob b4"></div>
+</div>
+<div class="cyber-grid"></div>
+<div class="scanlines"></div>
+<div id="noiseOverlay"></div>
+<div class="mouse-glow" id="mouseGlow"></div>
+
+<!-- 加载屏 -->
+<div id="loader">
+  <div class="loader-bolt">⚡</div>
+  <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+</div>
+
+<!-- 顶部 HUD -->
+<header id="hud" class="hidden">
+  <div class="hud-left">
+    <button class="icon-btn" id="homeBtn" title="返回主页">⚡</button>
+    <div class="player-info">
+      <div class="avatar">🧑‍🔬</div>
+      <div class="pinfo">
+        <div class="pname" id="pname">电学学徒</div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="hud-center">
+    <div class="stage" id="stageLabel">关卡</div>
+  </div>
+  <div class="hud-right">
+    <div class="stat"><span class="stat-icon">⭐</span><span id="starCount">0</span></div>
+    <div class="stat"><span class="stat-icon">💎</span><span id="gemCount">0</span></div>
+    <button class="icon-btn" id="soundBtn" title="音效">🔊</button>
+  </div>
+</header>
+
+<!-- 主屏幕 -->
+<main id="app">
+
+  <!-- 首页 -->
+  <section id="screen-home" class="screen active">
+    <div class="hero">
+      <div class="logo">
+        <span class="logo-mark">⚡</span>
+        <h1 class="title">电学大冒险</h1>
+        <div class="subtitle">ELECTRIC · QUEST · 人教版</div>
+      </div>
+      <p class="tagline">零基础学电学 · 从电荷到电磁感应 · 湖南考试必备</p>
+      <div class="hero-stats">
+        <div class="hstat"><b id="hsLevel">Lv.1</b><span>等级</span></div>
+        <div class="hstat"><b id="hsStars">0</b><span>星星</span></div>
+        <div class="hstat"><b id="hsDone">0/20</b><span>通关</span></div>
+      </div>
+      <div class="cta-row">
+        <button class="btn-primary" id="startBtn">开始冒险</button>
+        <button class="btn-ghost" id="labBtn">🔬 自由实验室</button>
+        <button class="btn-ghost" id="examBtn">📝 模拟考试</button>
+        <button class="btn-ghost" id="wrongBtn">📒 错题本</button>
+        <button class="btn-ghost" id="achBtn">🏆 成就</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关卡选择 -->
+  <section id="screen-levels" class="screen">
+    <div class="level-header">
+      <h2>选择关卡</h2>
+      <div class="tabs">
+        <button class="tab active" data-tab="junior">初中电学</button>
+        <button class="tab" data-tab="senior">高中电学</button>
+      </div>
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+  </section>
+
+  <!-- 关卡简介 -->
+  <section id="screen-intro" class="screen">
+    <div class="intro-card">
+      <button class="icon-btn back-btn" id="introBack">←</button>
+      <div class="intro-icon" id="introIcon">⚡</div>
+      <h2 id="introTitle">关卡标题</h2>
+      <div class="difficulty" id="introDiff">★☆☆</div>
+      <p class="intro-desc" id="introDesc"></p>
+      <div class="knowledge-box">
+        <h3>📚 本关知识</h3>
+        <ul id="introKnow"></ul>
+      </div>
+      <div class="phase-hint">本关流程：📖 知识讲解 → 🧪 互动实验 → 📝 闯关测试</div>
+      <button class="btn-primary" id="beginBtn">开始学习</button>
+    </div>
+  </section>
+
+  <!-- 知识讲解屏幕 -->
+  <section id="screen-teach" class="screen">
+    <div class="teach-wrap">
+      <div class="teach-top">
+        <button class="icon-btn back-btn" id="teachBack">←</button>
+        <div class="teach-progress">
+          <span id="teachStepInfo">第 1 / 1 步</span>
+          <div class="teach-dots" id="teachDots"></div>
+        </div>
+        <button class="icon-btn" id="teachNext">→</button>
+      </div>
+      <div class="teach-content" id="teachContent"></div>
+      <div class="teach-bottom">
+        <button class="btn-ghost" id="teachPrev">上一步</button>
+        <button class="btn-primary" id="teachSkip">跳过讲解</button>
+        <button class="btn-primary" id="teachNextBtn">下一步 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 游戏屏幕 -->
+  <section id="screen-game" class="screen">
+    <div class="game-top">
+      <div class="round-info">
+        <span class="round" id="roundLabel">第 1 / 5 题</span>
+        <span class="score-badge">得分 <b id="scoreNow">0</b></span>
+      </div>
+      <div class="timer"><div class="timer-bar" id="timerBar"></div></div>
+      <button class="icon-btn" id="quitBtn" title="退出">✕</button>
+    </div>
+    <div class="phase-tag" id="phaseTag">闯关测试</div>
+    <div class="game-area" id="gameArea"></div>
+    <div class="feedback" id="feedback"></div>
+  </section>
+
+  <!-- 结算屏幕 -->
+  <section id="screen-result" class="screen">
+    <div class="result-card">
+      <div class="result-crown" id="resultCrown">🎉</div>
+      <h2 id="resultTitle">关卡完成</h2>
+      <div class="stars-row" id="starsRow"></div>
+      <div class="result-stats">
+        <div class="rstat"><b id="rScore">0</b><span>得分</span></div>
+        <div class="rstat"><b id="rAcc">0%</b><span>正确率</span></div>
+        <div class="rstat"><b id="rTime">0s</b><span>用时</span></div>
+      </div>
+      <div class="rewards">
+        <span class="reward">+<b id="rXp">0</b> XP</span>
+        <span class="reward">+<b id="rGem">0</b> 💎</span>
+      </div>
+      <div class="result-btns">
+        <button class="btn-ghost" id="retryBtn">再来一次</button>
+        <button class="btn-primary" id="nextBtn">下一关 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 成就屏幕 -->
+  <section id="screen-ach" class="screen">
+    <div class="ach-header">
+      <h2>🏆 成就殿堂</h2>
+      <button class="icon-btn back-btn" id="achBack">←</button>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </section>
+
+  <!-- 错题本屏幕 -->
+  <section id="screen-wrong" class="screen">
+    <div class="ach-header">
+      <h2>📒 错题本</h2>
+      <button class="icon-btn back-btn" id="wrongBack">←</button>
+    </div>
+    <div class="wrong-stats" id="wrongStats"></div>
+    <div class="wrong-list" id="wrongList"></div>
+  </section>
+
+  <!-- 考试屏幕 -->
+  <section id="screen-exam" class="screen">
+    <div class="exam-card">
+      <button class="icon-btn back-btn" id="examBack">←</button>
+      <h2>📝 模拟考试</h2>
+      <p class="intro-desc" id="examDesc">湖南省电学综合测试 · 限时 15 分钟 · 20 道题</p>
+      <div class="exam-modes">
+        <button class="exam-mode-btn" data-mode="junior">初中组（10题）</button>
+        <button class="exam-mode-btn" data-mode="senior">高中组（10题）</button>
+        <button class="exam-mode-btn active" data-mode="all">综合组（20题）</button>
+      </div>
+      <button class="btn-primary" id="examStart">开始考试</button>
+    </div>
+  </section>
+
+  <!-- 实验室大厅 -->
+  <section id="screen-lab" class="screen">
+    <div class="ach-header">
+      <h2>🔬 自由实验室</h2>
+      <button class="icon-btn back-btn" id="labBack">←</button>
+    </div>
+    <p class="intro-desc" style="text-align:center;margin:0 auto 18px;max-width:600px">自由探索电学世界 · 操作失误会触发真实物理后果，放心大胆地实验吧！</p>
+    <div class="lab-grid" id="labGrid"></div>
+  </section>
+
+  <!-- 实验详情屏 -->
+  <section id="screen-labdetail" class="screen">
+    <div class="game-top">
+      <div class="round-info">
+        <span class="round" id="labTitle">实验</span>
+      </div>
+      <button class="icon-btn" id="labDetailBack" title="返回">✕</button>
+    </div>
+    <div class="lab-area" id="labArea"></div>
+    <div class="feedback" id="labFeedback"></div>
+  </section>
+
+</main>
+
+<!-- 提示 Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- 自定义确认弹窗 -->
+<div id="confirmModal" class="confirm-modal hidden">
+  <div class="confirm-box">
+    <div class="confirm-icon">⚠️</div>
+    <div class="confirm-msg" id="confirmMsg">确定要退出吗？</div>
+    <div class="confirm-btns">
+      <button class="btn-ghost" id="confirmCancel">取消</button>
+      <button class="btn-primary" id="confirmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
