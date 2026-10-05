@@ -17,6 +17,10 @@ if(typeof CanvasRenderingContext2D!=='undefined'&&!CanvasRenderingContext2D.prot
   };
 }
 
+/* ---------- 安全：HTML 转义（仅用于 innerHTML 模板中拼接的不可信/存档数据；textContent 无需转义） ---------- */
+const _ESCAPE_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#47;'};
+function esc(v){return String(v??'').replace(/[&<>"'/]/g,c=>_ESCAPE_MAP[c]);}
+
 /* ---------- 音效 ---------- */
 const Sfx = (() => {
   let ctx = null, on = localStorage.getItem('eq_sound')!=='off';
@@ -672,7 +676,14 @@ const ACHIEVEMENTS = [
 const Save = {
   key:'electric_quest_save_v2',
   data:{xp:0,level:1,gems:0,stars:{},ach:{},bestScores:{},wrong:[],teachDone:{},examScores:{}},
-  load(){try{const s=localStorage.getItem(this.key);if(s)Object.assign(this.data,JSON.parse(s));}catch(e){}this.data.ach=this.data.ach||{};this.data.wrong=this.data.wrong||[];this.data.teachDone=this.data.teachDone||{};},
+  load(){try{const s=localStorage.getItem(this.key);if(s)Object.assign(this.data,JSON.parse(s));}catch(e){}
+    this.data.ach=(this.data.ach&&typeof this.data.ach==='object')?this.data.ach:{};
+    this.data.teachDone=(this.data.teachDone&&typeof this.data.teachDone==='object')?this.data.teachDone:{};
+    // 规范化错题本：仅保留结构合法的条目，字段统一转字符串（渲染时再做 HTML 转义）
+    this.data.wrong=Array.isArray(this.data.wrong)?this.data.wrong
+      .filter(w=>w&&typeof w==='object')
+      .map(w=>({q:String(w.q??''),your:String(w.your??''),right:String(w.right??''),ex:String(w.ex??''),level:typeof w.level==='number'?w.level:String(w.level??'')})):[];
+  },
   save(){try{localStorage.setItem(this.key,JSON.stringify(this.data));}catch(e){}},
   totalStars(){return Object.values(this.data.stars).reduce((a,b)=>a+b,0);},
   doneCount(){return Object.keys(this.data.stars).filter(k=>this.data.stars[k]>0).length;},
@@ -1089,7 +1100,7 @@ function renderWrong(){
   $('wrongStats').innerHTML=`<div class="wrong-stat"><b>${ws.length}</b><span>错题总数</span></div><div class="wrong-stat"><b>${new Set(ws.map(w=>w.level)).size}</b><span>涉及关卡</span></div>${ws.length?'<button class="btn-ghost wrong-clear" id="wrongClear">🗑️ 清空错题</button>':''}`;
   const list=$('wrongList');
   if(ws.length===0){list.innerHTML='<div class="wrong-empty">🎉 暂无错题，继续加油！</div>';return;}
-  list.innerHTML=ws.map(w=>`<div class="wrong-item"><div class="wrong-q">${w.q}</div><div class="wrong-meta">${typeof w.level==='number'?'关卡 '+w.level:w.level}</div><div class="wrong-ans">你的答案：<span class="your">${w.your}</span> ｜ 正确答案：<span class="right">${w.right}</span></div><div class="wrong-ex">💡 ${w.ex}</div></div>`).join('');
+  list.innerHTML=ws.map(w=>`<div class="wrong-item"><div class="wrong-q">${esc(w.q)}</div><div class="wrong-meta">${typeof w.level==='number'?'关卡 '+w.level:esc(w.level)}</div><div class="wrong-ans">你的答案：<span class="your">${esc(w.your)}</span> ｜ 正确答案：<span class="right">${esc(w.right)}</span></div><div class="wrong-ex">💡 ${esc(w.ex)}</div></div>`).join('');
   const wc=$('wrongClear');
   if(wc)wc.onclick=async()=>{if(await confirmDialog('确定清空全部错题吗？此操作不可恢复')){Save.data.wrong=[];Save.save();checkAchievements();renderWrong();toast('错题本已清空');}};
 }
