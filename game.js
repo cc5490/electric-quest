@@ -1193,8 +1193,8 @@ function labFeedback(msg, type='info'){
    ========================================================= */
 const LAB_KB = {
   static:{
-    principle:`<h4>📖 实验原理</h4>摩擦起电的实质是<b>电子的转移</b>：不同材料的原子核束缚电子的本领不同，摩擦时电子从束缚弱的物体转移到束缚强的物体。<ul><li>玻璃棒+丝绸 → 玻璃棒<span class="kb-ok">失去电子带正电</span></li><li>橡胶棒+毛皮 → 橡胶棒<span class="kb-warn">得到电子带负电</span></li></ul>验电器原理：<b>同种电荷相互排斥</b>，金属箔张角越大带电量越多。`,
-    apparatus:['🥢 玻璃棒','🟤 橡胶棒','🎀 丝绸','🧶 毛皮','⚗️ 验电器','🔌 接地导线'],
+    principle:`<h4>📖 实验原理</h4>摩擦起电的实质是<b>电子的转移</b>：不同材料的原子核束缚电子的本领不同，摩擦时电子从束缚弱的物体转移到束缚强的物体。<ul><li>玻璃棒+丝绸 → 玻璃棒<span class="kb-ok">失去电子带正电</span></li><li>橡胶棒+毛皮 → 橡胶棒<span class="kb-warn">得到电子带负电</span></li></ul>各种材料按得失电子本领排成<b>摩擦起电序列</b>：毛皮 → 玻璃 → 丝绸 → 棉 → 橡胶 → PVC。<b>带正电还是负电，取决于和哪种材料摩擦</b>——玻璃棒与毛皮摩擦时，毛皮更易失去电子，玻璃棒反而得到电子带微弱负电；两种材料在序列中越接近，起电越弱。验电器原理：<b>同种电荷相互排斥</b>，金属箔张角越大带电量越多。`,
+    apparatus:['🥢 玻璃棒','🟤 橡胶棒','🔵 PVC管','🎀 丝绸','🧶 毛皮','🧻 棉布','⚗️ 验电器','🔌 接地导线'],
     steps:`<h4>📋 实验步骤</h4><ul><li>① 用丝绸用力摩擦玻璃棒（或毛皮摩擦橡胶棒）</li><li>② 将带电棒<b>靠近</b>验电器金属球 → 观察<b>静电感应</b>（箔片张开，电荷未转移）</li><li>③ 将带电棒<b>接触</b>金属球 → 观察<b>接触起电</b>（电荷转移，箔片持续张开）</li><li>④ 手触摸金属球或接地 → 电荷导入大地，箔片合拢</li></ul>`,
     notes:`<h4>⚠️ 注意事项</h4><ul><li>电荷量过大时会产生<span class="kb-warn">火花放电</span>（如冬天脱毛衣的噼啪声）</li><li>感应起电：棒移开后箔片会合拢；接触起电：电荷真正转移，移开后仍张开</li><li>潮湿空气会让电荷很快流失，实验效果变差</li><li>验电器金属箔很脆弱，张角过大会损坏</li></ul>`,
     conclusion:`<h4>💡 实验结论</h4><ul><li>自然界只有<b>两种电荷</b>：正电荷和负电荷</li><li><b>同种电荷相互排斥，异种电荷相互吸引</b></li><li>摩擦起电不是"创造"电荷，而是电子从一个物体转移到另一个物体</li><li>金属是导体，电荷可通过金属杆传导到金属箔</li></ul>`
@@ -2181,7 +2181,7 @@ function labMotor(wrap){
 
 /* ============ 实验1：摩擦起电（自由拖拽·无导线） ============ */
 function labStatic(wrap){
-  wrap.innerHTML=`<div class="quiz-q">🧲 静电实验室 · 自由拖拽 — 按住棒子到布料上摩擦，再靠近验电器</div>
+  wrap.innerHTML=`<div class="quiz-q">🧲 静电实验室 · 自由拖拽 — 用丝绸摩擦玻璃棒、毛皮摩擦橡胶棒，试试不同配对结果一样吗？</div>
   <canvas class="lab-canvas fl-canvas" id="flCv" style="touch-action:none"></canvas>
   <div class="fl-tasks" id="flTasks"></div>
   <div class="lab-btn-row"><button class="btn-ghost" id="flReset">🔄 重置</button>
@@ -2191,22 +2191,27 @@ function labStatic(wrap){
   const cv=$('flCv'),ctx=cv.getContext('2d');
   cv.width=cv.clientWidth||600;cv.height=440;
   const W=cv.width,H=cv.height;
-  const signMap={glass:1,rubber:-1,pvc:-0.8};
+  /* 摩擦起电序列（triboelectric series）：数值越大越容易失去电子。
+     摩擦时电子总是从数值大的材料转移到数值小的材料；
+     两者数值越接近起电越弱，数值相同则不起电。
+     教材标准配对：玻璃+丝绸→玻璃带正电；毛皮+橡胶→橡胶带负电。 */
+  const TRIBO={fur:5,glass:4,silk:1,cotton:0,rubber:-2,pvc:-4};
   const rods=[
     {type:'glass',name:'玻璃棒',x:W*0.16,y:80,charge:0,c:'#ffe4a0'},
     {type:'rubber',name:'橡胶棒',x:W*0.16,y:150,charge:0,c:'#4a3a2a'},
     {type:'pvc',name:'PVC管',x:W*0.16,y:220,charge:0,c:'#3a5a8a'}
   ];
   const cloths=[
-    {name:'丝绸',x:W*0.1,y:H-70,c:'#ff99cc',pair:'glass'},
-    {name:'毛皮',x:W*0.24,y:H-70,c:'#8B4513',pair:'rubber'},
-    {name:'棉布',x:W*0.38,y:H-70,c:'#dddddd',pair:'pvc'}
+    {type:'silk',name:'丝绸',x:W*0.1,y:H-70,c:'#ff99cc',pair:'glass'},
+    {type:'fur',name:'毛皮',x:W*0.24,y:H-70,c:'#8B4513',pair:'rubber'},
+    {type:'cotton',name:'棉布',x:W*0.38,y:H-70,c:'#dddddd',pair:'pvc'}
   ];
   const esc={x:W*0.7,y:H*0.4};
   const pile={x:W*0.45,y:H*0.82};
   const clip={x:W*0.9,y:H*0.8};
   const papers=[];for(let i=0;i<12;i++)papers.push({x:pile.x+(Math.random()*40-20),y:pile.y+(Math.random()*14-7),stuck:null,seed:Math.random()*6});
   let drag=null,foilQ=0,t=0;
+  let rubTip={key:'',t:0}; // 摩擦电子转移提示的节流状态
   const custom={};
   const tasks=[
     {text:'按住棒在布料上快速摩擦，再靠近验电器让箔片张开',check:()=>foilAngle()>8},
@@ -2234,12 +2239,35 @@ function labStatic(wrap){
   cv.onpointermove=e=>{
     if(!drag)return;const p=pos(e);
     const o=drag.o;o.x=Math.max(30,Math.min(W-50,p.x-drag.dx));o.y=Math.max(20,Math.min(H-20,p.y-drag.dy));
-    const mv=Math.hypot(p.x-drag.lx,p.y-drag.ly);drag.lx=p.x;drag.ly=p.y;
+    const mdx=p.x-drag.lx,mdy=p.y-drag.ly;drag.lx=p.x;drag.ly=p.y;
     if(!drag.clip){
-      for(const cl of cloths){
-        if(Math.hypot(o.x-cl.x,o.y-cl.y)<55&&mv>0.5){
-          o.charge=Math.max(-100,Math.min(100,o.charge+signMap[o.type]*mv*0.5*(cl.pair===o.type?1:0.35)));
+      // 取距离最近的一块布（三块布的感应区边缘有重叠，避免一帧同时算两块）
+      let nearCloth=null,nearD=55;
+      for(const cl of cloths){const d=Math.hypot(o.x-cl.x,o.y-cl.y);if(d<nearD){nearD=d;nearCloth=cl;}}
+      if(nearCloth&&Math.abs(mdx)>0.5){
+        // 只有真正"来回蹭"（水平方向反转，构成一个摩擦行程）才转移电子；
+        // 单向滑过布料（例如拿棒去验电器途中经过）不算摩擦，不起电
+        const dir=Math.sign(mdx);
+        drag.stroke=(drag.stroke||0)+Math.hypot(mdx,mdy);
+        if(drag.lastDir!=null&&dir!==drag.lastDir){
+          const stroke=drag.stroke;drag.stroke=0;
+          // 电荷方向与强弱只由两种材料在摩擦起电序列中的相对位置决定
+          const diff=TRIBO[o.type]-TRIBO[nearCloth.type]; // >0：棒比布易失电子→棒带正电
+          if(diff!==0){                           // 得失电子本领相同→不起电
+            o.charge=Math.max(-100,Math.min(100,o.charge+(diff>0?1:-1)*0.07*Math.abs(diff)*stroke));
+            const key=o.type+'@'+nearCloth.type,now=performance.now();
+            if(rubTip.key!==key||now-rubTip.t>1500){
+              rubTip.key=key;rubTip.t=now;
+              if(Math.abs(diff)<=1)labFeedback(`🔎 ${nearCloth.name}和${o.name}得失电子的本领很接近，摩擦只能起很弱的电`,'warn');
+              else if(diff>0)labFeedback(`电子从${o.name}转移到${nearCloth.name} → ${o.name}失去电子，带正电(+)`,'ok');
+              else labFeedback(`电子从${nearCloth.name}转移到${o.name} → ${o.name}得到电子，带负电(−)`,'ok');
+            }
+          }
         }
+        if(dir!==0)drag.lastDir=dir;
+      }else if(!nearCloth){
+        // 离开布料后重新计数，防止"进入布料瞬间"被误判成一次反转
+        drag.lastDir=null;drag.stroke=0;
       }
     }
   };
@@ -2284,6 +2312,8 @@ function labStatic(wrap){
       ctx.fillStyle=cl.c;ctx.globalAlpha=0.85;
       ctx.beginPath();ctx.roundRect(cl.x-42,cl.y-16,84,32,6);ctx.fill();ctx.globalAlpha=1;
       ctx.fillStyle='#222';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText(cl.name,cl.x,cl.y+4);
+      ctx.fillStyle='rgba(140,220,255,0.75)';ctx.font='10px sans-serif';
+      ctx.fillText('↔'+(rods.find(r=>r.type===cl.pair)?.name||''),cl.x,cl.y+30);
     });
     /* 验电器 */
     ctx.strokeStyle='#8a94a0';ctx.lineWidth=2;ctx.fillStyle='rgba(180,220,255,0.08)';
@@ -2323,7 +2353,7 @@ function labStatic(wrap){
       ctx.fillText(`${r.name}${chg>5?(r.charge>0?' 带正电+':' 带负电−')+chg.toFixed(0):''}`,r.x,r.y-14);
     });
     ctx.fillStyle='rgba(234,242,255,0.5)';ctx.font='12px sans-serif';ctx.textAlign='center';
-    ctx.fillText('💡 按住棒子拖动：到布料上来回摩擦起电，再拖到验电器附近观察',W/2,H-8);
+    ctx.fillText('💡 只有"摩擦起电序列"中位置不同的材料才会起电：丝绸↔玻璃棒(+)、毛皮↔橡胶棒(−)，拖到验电器观察',W/2,H-8);
     if(t%15===0){tasks.forEach((tk,i)=>{if(!custom['t'+i]&&tk.check()){custom['t'+i]=true;renderTasks();Sfx.correct();}});
       if(tasks.every((tk,i)=>custom['t'+i])&&!custom.all){custom.all=true;Sfx.win();labFeedback('🎉 全部任务完成！','ok');}}
     labRaf=requestAnimationFrame(draw);
